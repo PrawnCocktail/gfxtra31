@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.757
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gfxtra31", "gfxtra31\gfxtra31.csproj", "{7DF49239-C2FD-4E73-9C34-AD2168A21C6F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7DF49239-C2FD-4E73-9C34-AD2168A21C6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DF49239-C2FD-4E73-9C34-AD2168A21C6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DF49239-C2FD-4E73-9C34-AD2168A21C6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DF49239-C2FD-4E73-9C34-AD2168A21C6F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2D9C2B5C-06AC-427D-9109-E4F2305DAB1B}
+	EndGlobalSection
+EndGlobal
