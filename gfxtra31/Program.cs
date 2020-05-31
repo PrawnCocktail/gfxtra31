@@ -15,25 +15,57 @@ namespace gfxtra31
     {
         static void Main(string[] args)
         {
-            List<OutputClasses> itemList = new List<OutputClasses>();
+            Tuple<int, int> pages = argumentHandle(args);
+            
+            mainLoop(pages.Item1, pages.Item2);
 
+            Console.WriteLine("Finished scraping pages " + pages.Item1 + " to " + pages.Item2);
+            Console.ReadLine();
+        }
+
+        static Tuple<int, int> argumentHandle(string[] args)
+        {
             int first = 1;
             int last = 0;
 
-            //deal with arguments here. 
-            foreach (var argument in args)
+            if (args.Length == 0)
             {
-                if (argument.StartsWith("first="))
+                Console.WriteLine("Enter the first page number you want to scrape. \nIf none is entered it will start from page 1");
+                string fline = Console.ReadLine();
+
+                if (!int.TryParse(fline, out first))
                 {
-                    first = Convert.ToInt32(argument.Replace("first=", ""));
+                    first = 1;
                 }
-                else if (argument.StartsWith("last="))
+                Console.WriteLine("Starting on page: " + first);
+                Console.WriteLine();
+
+                Console.WriteLine("Enter the last page number you want to scrape. \nIf none is entered it will run until the end.");
+                string lline = Console.ReadLine();
+
+                if (!int.TryParse(lline, out last))
                 {
-                    last = Convert.ToInt32(argument.Replace("last=", ""));
+                    last = 0;
                 }
-                else
+                Console.WriteLine("Starting on page: " + first);
+            }
+            else
+            {
+                //deal with arguments here. 
+                foreach (var argument in args)
                 {
-                    printHelp();
+                    if (argument.StartsWith("first="))
+                    {
+                        first = Convert.ToInt32(argument.Replace("first=", ""));
+                    }
+                    else if (argument.StartsWith("last="))
+                    {
+                        last = Convert.ToInt32(argument.Replace("last=", ""));
+                    }
+                    else
+                    {
+                        printHelp();
+                    }
                 }
             }
 
@@ -41,7 +73,7 @@ namespace gfxtra31
             int totalPages;
             if (last == 0)
             {
-                 totalPages = getTotalPages("https://www.gfxtra31.com/sitemap/page/1/");
+                totalPages = getTotalPages("https://www.gfxtra31.com/sitemap/page/1/");
             }
             else
             {
@@ -50,6 +82,13 @@ namespace gfxtra31
 
             //sets the first page number
             int pageNum = first;
+
+            return Tuple.Create(pageNum, totalPages);
+        }
+
+        static void mainLoop(int pageNum, int totalPages)
+        {
+            List<OutputClasses> itemList = new List<OutputClasses>();
 
             //loop though until you get to the final page, be it the total number of page or the number the user entered. 
             while (pageNum <= totalPages)
@@ -110,9 +149,6 @@ namespace gfxtra31
                 pageNum++;
                 Console.WriteLine();
             }
-
-            Console.WriteLine("Finished scraping pages " + first + " to " + totalPages);
-            Console.ReadLine();
         }
 
         static void printHelp()
