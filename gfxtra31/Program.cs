@@ -228,15 +228,31 @@ namespace gfxtra31
                         else if (decodedBaseUrl.Contains("gftxra.net"))
                         {
                             //if it is a redirect url then follow and check where it redirects and use that as the filenext url. 
-                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(decodedBaseUrl);
-                            request.AllowAutoRedirect = false;
-                            var response = request.GetResponse();
+                            //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(decodedBaseUrl);
+                            //request.AllowAutoRedirect = false;
+                            //request.Timeout = 10000;
+                            //var response = request.GetResponse();
+                            Tuple<bool, string> result = null;
+                            string baseurl = "";
+                            int timecount = 0;
+                            bool timeout = true;
+                            while (timeout == true)
+                            {
+                                result = redirectRequest(decodedBaseUrl);
+                                baseurl = result.Item2;
+                                timeout = result.Item1;
+                                if (timecount >= 4)
+                                {
+                                    baseurl = "TIMED OUT!";
+                                    break;
+                                }
+                                timecount++;
+                            }
 
-                            fileNextUrl = response.Headers["Location"];
-                            pagefileurls.Add(fileNextUrl);
+                            //fileNextUrl = response.Headers["Location"];
+                            pagefileurls.Add(baseurl);
                         }
                     }
-
                 }
             }
             //not all urls on the page use the "go.php" redirection method, some are just plane filenext urls
@@ -248,22 +264,28 @@ namespace gfxtra31
                     string fileNextUrl = item.Attributes["href"].Value;
                     pagefileurls.Add(fileNextUrl);
                 }
-
             }
 
             //convert the list of urls found on the page to a string seperated by a semicolon so its easier to put into the csv file.
             string fileUrls = String.Join(";", pagefileurls);
             return Tuple.Create(fileUrls, "");
+        }
 
-            //was gonna try and fetch the passwords on the page but its a hell of a task. the formatting is hit and miss, some pages dont have passwords and some do.
-            //var passSearch = doc.DocumentNode.SelectNodes("//div[starts-with(@id, 'news-id-')]");
-            //foreach (var tag in passSearch)
-            //{
-            //    if (tag.InnerText.Contains("P A S S W O R D"))
-            //    {
-
-            //    }
-            //}
+        static Tuple<bool, string> redirectRequest(string decodedBaseUrl)
+        {
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(decodedBaseUrl);
+                request.AllowAutoRedirect = false;
+                request.Timeout = 15000;
+                var response = request.GetResponse();
+                return Tuple.Create(false, response.Headers["Location"]);
+            }
+            catch (WebException ex)
+            {
+                Console.WriteLine("Request timed out, retrying.");
+                return Tuple.Create(true, "");
+            }
         }
 
         static int getTotalPages(string url)
