@@ -15,21 +15,39 @@ namespace gfxtra31
     {
         static void Main(string[] args)
         {
-            Tuple<int, int> pages = argumentHandle(args);
-            
-            mainLoop(pages.Item1, pages.Item2);
+            var arguments = argumentHandle(args);
 
-            Console.WriteLine("Finished scraping pages " + pages.Item1 + " to " + pages.Item2);
+            mainLoop(arguments.firstPage, arguments.lastPage, arguments.Url, arguments.Type);
+
+            Console.WriteLine("Finished scraping pages " + arguments.firstPage + " to " + arguments.lastPage);
             Console.ReadLine();
         }
 
-        static Tuple<int, int> argumentHandle(string[] args)
+        static Arguments argumentHandle(string[] args)
         {
+            Arguments arguments = new Arguments();
+
             int first = 1;
             int last = 0;
+            string url = "";
+            string type = "";
 
             if (args.Length == 0)
             {
+                Console.WriteLine("Enter the url of a category you wish to scrape. \nIf none is entered it will start from page 1 of the sitemap");
+                url = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    url = "https://www.gfxtra31.com/sitemap/page/1/";
+                    type = "sitemap";
+                }
+                else
+                {
+                    type = "category";
+                }
+                Console.WriteLine();
+
                 Console.WriteLine("Enter the first page number you want to scrape. \nIf none is entered it will start from page 1");
                 string fline = Console.ReadLine();
 
@@ -62,6 +80,11 @@ namespace gfxtra31
                     {
                         last = Convert.ToInt32(argument.Replace("last=", ""));
                     }
+                    else if (argument.StartsWith("url="))
+                    {
+                        url = argument.Replace("url=", "");
+                        type = "category";
+                    }
                     else
                     {
                         printHelp();
@@ -73,7 +96,7 @@ namespace gfxtra31
             int totalPages;
             if (last == 0)
             {
-                totalPages = getTotalPages("https://www.gfxtra31.com/sitemap/page/1/");
+                totalPages = getTotalPages(url);
             }
             else
             {
@@ -83,12 +106,17 @@ namespace gfxtra31
             //sets the first page number
             int pageNum = first;
 
-            return Tuple.Create(pageNum, totalPages);
+            arguments.firstPage = pageNum;
+            arguments.lastPage = totalPages;
+            arguments.Url = url;
+            arguments.Type = type;
+            return arguments;
         }
 
-        static void mainLoop(int pageNum, int totalPages)
+        static void mainLoop(int pageNum, int totalPages, string url, string type)
         {
             List<OutputClasses> itemList = new List<OutputClasses>();
+            string baseurl = url;
 
             //loop though until you get to the final page, be it the total number of page or the number the user entered. 
             while (pageNum <= totalPages)
@@ -100,12 +128,28 @@ namespace gfxtra31
                 Console.ResetColor();
                 Console.WriteLine();
 
-                var url = "https://www.gfxtra31.com/sitemap/page/" + pageNum;
+                if (type == "sitemap")
+                {
+                    url = "https://www.gfxtra31.com/sitemap/page/" + pageNum;
+                }
+                else if (type == "category")
+                {
+                    url = baseurl + "page/" + pageNum + "/";
+                }
+
                 var web = new HtmlWeb();
                 var doc = web.Load(url);
 
+                HtmlNodeCollection items = null;
                 //gets all the results from the page, 50 per page.
-                var items = doc.DocumentNode.SelectNodes("//div[@id='mcontent_inner_box']//div[@class='quote']//a");
+                if (type == "sitemap")
+                {
+                    items = doc.DocumentNode.SelectNodes("//div[@id='mcontent_inner_box']//div[@class='quote']//a");
+                }
+                else if (type == "category")
+                {
+                    items = doc.DocumentNode.SelectNodes("//div[@id='mcontent_inner_box']//div[@class='aciklama']//div[@class='baslik']//a");
+                }
 
                 //loops through the results 
                 foreach (var item in items)
@@ -136,12 +180,23 @@ namespace gfxtra31
                     //adds it to the list
                     itemList.Add(itemObj);
 
-                    //dump the list to csv every 50 records. thee is 50 on a page, so the most you can lose, should the program crash, is 1 page of records. 
-                    //this can be changed to whatever tho.
-                    if (itemList.Count == 50)
+                    //dump the list to csv. 
+
+                    if (type == "sitemap")
                     {
-                        WriteCSV(itemList, @"links.csv");
-                        itemList.Clear();
+                        if (itemList.Count == 50)
+                        {
+                            WriteCSV(itemList, @"sitemap.csv");
+                            itemList.Clear();
+                        }
+                    }
+                    else if (type == "category")
+                    {
+                        if (itemList.Count == 24)
+                        {
+                            WriteCSV(itemList, @"category.csv");
+                            itemList.Clear();
+                        }
                     }
                 }
 
@@ -292,7 +347,7 @@ namespace gfxtra31
         {
             //loads the first page of results and checks to see how many pages.
             //this is only used if the user doesnt specify an end page 
-            url = "https://www.gfxtra31.com/sitemap/page/1";
+            //url = "https://www.gfxtra31.com/themes/wordpress-templates/page/1/";
             var web = new HtmlWeb();
             var doc = web.Load(url);
             var navNode = doc.DocumentNode.SelectNodes("//div[@class='navigation']//a");
