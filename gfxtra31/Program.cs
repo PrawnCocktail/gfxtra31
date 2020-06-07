@@ -15,7 +15,7 @@ namespace gfxtra31
     {
         static void Main(string[] args)
         {
-            var arguments = argumentHandle(args);
+            var arguments = argumentHandler(args);
 
             mainLoop(arguments.firstPage, arguments.lastPage, arguments.Url, arguments.Type);
 
@@ -23,10 +23,8 @@ namespace gfxtra31
             Console.ReadLine();
         }
 
-        static Arguments argumentHandle(string[] args)
+        static Arguments argumentHandler(string[] args)
         {
-            Arguments arguments = new Arguments();
-
             int first = 1;
             int last = 0;
             string url = "";
@@ -34,9 +32,9 @@ namespace gfxtra31
 
             if (args.Length == 0)
             {
-                Console.WriteLine("Enter the url of a category you wish to scrape. \nIf none is entered it will start from page 1 of the sitemap");
+                //url check / assign
+                Console.WriteLine("Enter the url of a category you wish to scrape. \nIf none is entered it will scrape the sitemap");
                 url = Console.ReadLine();
-
                 if (string.IsNullOrWhiteSpace(url))
                 {
                     url = "https://www.gfxtra31.com/sitemap/page/1/";
@@ -46,11 +44,12 @@ namespace gfxtra31
                 {
                     type = "category";
                 }
+                Console.WriteLine("URL Type = " + type);
                 Console.WriteLine();
 
+                //first page check / assign
                 Console.WriteLine("Enter the first page number you want to scrape. \nIf none is entered it will start from page 1");
                 string fline = Console.ReadLine();
-
                 if (!int.TryParse(fline, out first))
                 {
                     first = 1;
@@ -58,9 +57,9 @@ namespace gfxtra31
                 Console.WriteLine("Starting on page: " + first);
                 Console.WriteLine();
 
+                //last page check / assign
                 Console.WriteLine("Enter the last page number you want to scrape. \nIf none is entered it will run until the end.");
                 string lline = Console.ReadLine();
-
                 if (!int.TryParse(lline, out last))
                 {
                     last = 0;
@@ -103,13 +102,14 @@ namespace gfxtra31
                 totalPages = last;
             }
 
-            //sets the first page number
-            int pageNum = first;
+            Arguments arguments = new Arguments()
+            {
+                firstPage = first,
+                lastPage = totalPages,
+                Url = url,
+                Type = type
+            };
 
-            arguments.firstPage = pageNum;
-            arguments.lastPage = totalPages;
-            arguments.Url = url;
-            arguments.Type = type;
             return arguments;
         }
 
@@ -139,9 +139,9 @@ namespace gfxtra31
 
                 var web = new HtmlWeb();
                 var doc = web.Load(url);
-
                 HtmlNodeCollection items = null;
-                //gets all the results from the page, 50 per page.
+
+                //gets all the results from the page.
                 if (type == "sitemap")
                 {
                     items = doc.DocumentNode.SelectNodes("//div[@id='mcontent_inner_box']//div[@class='quote']//a");
@@ -181,7 +181,6 @@ namespace gfxtra31
                     itemList.Add(itemObj);
 
                     //dump the list to csv. 
-
                     if (type == "sitemap")
                     {
                         if (itemList.Count == 50)
@@ -205,21 +204,7 @@ namespace gfxtra31
                 Console.WriteLine();
             }
         }
-
-        static void printHelp()
-        {
-            Console.WriteLine("Invalid argument found.");
-            Console.WriteLine("Valid arguments are...");
-            Console.WriteLine("first - This is the number of the first page of search results. [Optional]");
-            Console.WriteLine("last - This is the number of the last page of search results. [Optional]");
-            Console.WriteLine("For example:");
-            Console.WriteLine("gfxtra31.exe first=120 last=400");
-            Console.WriteLine("This will process all pages starting with page 120 and ending on page 400.");
-            Console.WriteLine("Press return to exit.");
-            Console.ReadLine();
-            Environment.Exit(0);
-        }
-
+        
         static Tuple<string, string> parseItemPage(string url)
         {
             var web = new HtmlWeb();
@@ -283,14 +268,11 @@ namespace gfxtra31
                         else if (decodedBaseUrl.Contains("gftxra.net"))
                         {
                             //if it is a redirect url then follow and check where it redirects and use that as the filenext url. 
-                            //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(decodedBaseUrl);
-                            //request.AllowAutoRedirect = false;
-                            //request.Timeout = 10000;
-                            //var response = request.GetResponse();
                             Tuple<bool, string> result = null;
                             string baseurl = "";
                             int timecount = 0;
                             bool timeout = true;
+
                             while (timeout == true)
                             {
                                 result = redirectRequest(decodedBaseUrl);
@@ -304,7 +286,6 @@ namespace gfxtra31
                                 timecount++;
                             }
 
-                            //fileNextUrl = response.Headers["Location"];
                             pagefileurls.Add(baseurl);
                         }
                     }
@@ -347,7 +328,6 @@ namespace gfxtra31
         {
             //loads the first page of results and checks to see how many pages.
             //this is only used if the user doesnt specify an end page 
-            //url = "https://www.gfxtra31.com/themes/wordpress-templates/page/1/";
             var web = new HtmlWeb();
             var doc = web.Load(url);
             var navNode = doc.DocumentNode.SelectNodes("//div[@class='navigation']//a");
@@ -368,6 +348,21 @@ namespace gfxtra31
             Console.WriteLine("Total Pages: " + totalPages);
             Console.WriteLine();
             return totalPages;
+        }
+
+        static void printHelp()
+        {
+            Console.WriteLine("Invalid argument found.");
+            Console.WriteLine("Valid arguments are...");
+            Console.WriteLine("url - This is the url of the a category page. [Optional]");
+            Console.WriteLine("first - This is the number of the first page of search results. [Optional]");
+            Console.WriteLine("last - This is the number of the last page of search results. [Optional]");
+            Console.WriteLine("For example:");
+            Console.WriteLine("gfxtra31.exe first=120 last=400");
+            Console.WriteLine("This will process all pages starting with page 120 and ending on page 400.");
+            Console.WriteLine("Press return to exit.");
+            Console.ReadLine();
+            Environment.Exit(0);
         }
 
         static void WriteCSV<T>(IEnumerable<T> items, string path)
